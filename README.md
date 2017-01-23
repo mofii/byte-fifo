@@ -2,13 +2,17 @@
 
 ## Introduction
 
-This module contains exactly one class, ``BytesFIFO``.  The purpose of ``BytesFIFO`` is to 
-provide a stream-like interface to a fixed-size byte-oriented FIFO in Python.  This should
-be significantly faster than using a deque, list, or manually manipulating 
-``str``/``bytearray``/``bytes``.
+This module contains exactly two classes, ``BytesFIFO`` and
+``ThreadsafeBytesFIFO``.  The purpose of ``BytesFIFO`` is to provide a
+stream-like interface to a fixed-size byte-oriented FIFO in Python.  This
+should be significantly faster than using a deque, list, or manually
+manipulating  ``str``/``bytearray``/``bytes``. ``ThreadsafeBytesFIFO`` does the
+same thing as ``BytesFIFO``, but is thread-safe. It depends on the
+``threading`` module, and will only be available if this module can be
+imported.
 
-The API only accepts ``bytes`` and ``bytearray``, and will read data back as ``bytes``.
-It is a non-blocking stream.
+The API only accepts ``bytes`` and ``bytearray``, and will read data back as
+``bytes``. It is a non-blocking stream.
 
 ## Performance
 
