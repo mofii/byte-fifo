@@ -2,7 +2,7 @@ import io
 
 class BytesFIFO(object):
     """
-    A FIFO that can store a fixed number of bytes.
+    A thread-safe FIFO that can store a fixed number of bytes.
     """
     def __init__(self, init_size):
         """ Create a FIFO of ``init_size`` bytes. """
@@ -11,17 +11,22 @@ class BytesFIFO(object):
         self._filled = 0
         self._read_ptr = 0
         self._write_ptr = 0
+        self.lock = threading.Lock()
+
+    def __bool__(self):
+        return self._size > 0
 
     def read(self, size=-1):
         """
         Read at most ``size`` bytes from the FIFO.
-        
+
         If less than ``size`` bytes are available, or ``size`` is negative,
         return all remaining bytes.
         """
+        self.lock.acquire()
         if size < 0:
             size = self._filled
-        
+
         # Go to read pointer
         self._buffer.seek(self._read_ptr)
 
@@ -39,17 +44,19 @@ class BytesFIFO(object):
             self._read_ptr = leftover_size
 
         self._filled -= size
-        
+
+        self.lock.release()
         return ret
 
     def write(self, data):
         """
         Write as many bytes of ``data`` as are free in the FIFO.
-        
+
         If less than ``len(data)`` bytes are free, write as many as can be written.
         Returns the number of bytes written.
         """
-        free = self.free()
+        self.lock.acquire()
+        free = self._free()
         write_size = min(len(data), free)
 
         if write_size:
@@ -70,6 +77,7 @@ class BytesFIFO(object):
 
         self._filled += write_size
 
+        self.lock.release()
         return write_size
 
     def flush(self):
@@ -77,25 +85,24 @@ class BytesFIFO(object):
         self._filled = 0
         self._read_ptr = 0
         self._write_ptr = 0
-        
-    def empty(self):
-        """ Return ```True``` if FIFO is empty. """
-        return self._filled == 0
 
-    def full(self):
-        """ Return ``True`` if FIFO is full. """
-        return self._filled == self._size
+    def _free(self):
+        """ Return an approximate number of bytes that can be written to the FIFO. """
+        return self._size - self._filled
 
     def free(self):
         """ Return the number of bytes that can be written to the FIFO. """
-        return self._size - self._filled
+        self.lock.acquire()
+        size = self._free()
+        self.lock.release()
+        return size
 
     def capacity(self):
         """ Return the total space allocated for this FIFO. """
         return self._size
 
     def __len__(self):
-        """ Return the amount of data filled in FIFO """
+        """ Return the approximate amount of data filled in FIFO """
         return self._filled
 
     def __nonzero__(self):
@@ -111,6 +118,7 @@ class BytesFIFO(object):
         If ``new_size`` is smaller than the current size, the internal
         buffer is not contracted (yet).
         """
+        self.lock.acquire()
         if new_size < 1:
             raise ValueError("Cannot resize to zero or less bytes.")
 
@@ -128,5 +136,6 @@ class BytesFIFO(object):
             self._filled = len(old_data)
             self._read_ptr = 0
             self._write_ptr = self._filled
-        
+
         self._size = new_size
+        self.lock.release()
