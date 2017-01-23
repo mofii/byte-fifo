@@ -1,5 +1,8 @@
-import fifo
+
 import unittest
+
+import .fifo
+
 
 class BytesFIFO(unittest.TestCase):
     def setUp(self):

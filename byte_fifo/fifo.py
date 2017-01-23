@@ -2,7 +2,7 @@ import io
 
 class BytesFIFO(object):
     """
-    A thread-safe FIFO that can store a fixed number of bytes.
+    A FIFO that can store a fixed number of bytes.
     """
     def __init__(self, init_size):
         """ Create a FIFO of ``init_size`` bytes. """
@@ -11,7 +11,6 @@ class BytesFIFO(object):
         self._filled = 0
         self._read_ptr = 0
         self._write_ptr = 0
-        self.lock = threading.Lock()
 
     def __bool__(self):
         return self._size > 0
@@ -23,7 +22,6 @@ class BytesFIFO(object):
         If less than ``size`` bytes are available, or ``size`` is negative,
         return all remaining bytes.
         """
-        self.lock.acquire()
         if size < 0:
             size = self._filled
 
@@ -45,7 +43,6 @@ class BytesFIFO(object):
 
         self._filled -= size
 
-        self.lock.release()
         return ret
 
     def write(self, data):
@@ -55,7 +52,6 @@ class BytesFIFO(object):
         If less than ``len(data)`` bytes are free, write as many as can be written.
         Returns the number of bytes written.
         """
-        self.lock.acquire()
         free = self._free()
         write_size = min(len(data), free)
 
@@ -77,7 +73,6 @@ class BytesFIFO(object):
 
         self._filled += write_size
 
-        self.lock.release()
         return write_size
 
     def flush(self):
@@ -92,9 +87,7 @@ class BytesFIFO(object):
 
     def free(self):
         """ Return the number of bytes that can be written to the FIFO. """
-        self.lock.acquire()
         size = self._free()
-        self.lock.release()
         return size
 
     def capacity(self):
@@ -118,7 +111,6 @@ class BytesFIFO(object):
         If ``new_size`` is smaller than the current size, the internal
         buffer is not contracted (yet).
         """
-        self.lock.acquire()
         if new_size < 1:
             raise ValueError("Cannot resize to zero or less bytes.")
 
@@ -138,4 +130,3 @@ class BytesFIFO(object):
             self._write_ptr = self._filled
 
         self._size = new_size
-        self.lock.release()
