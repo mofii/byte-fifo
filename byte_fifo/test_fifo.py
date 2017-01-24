@@ -1,12 +1,12 @@
 
 import unittest
 
-import .fifo
+from .fifo import BytesFIFO
 
 
-class BytesFIFO(unittest.TestCase):
+class TestBytesFIFO(unittest.TestCase):
     def setUp(self):
-        self.f = fifo.BytesFIFO(10)
+        self.f = BytesFIFO(10)
 
     def test_fifo_empty(self):
         self.assertTrue(self.f.empty())
@@ -77,7 +77,7 @@ class BytesFIFO(unittest.TestCase):
 
     def test_capacity(self):
         self.assertEqual(10, self.f.capacity())
-        self.assertEqual(5, fifo.BytesFIFO(5).capacity())
+        self.assertEqual(5, BytesFIFO(5).capacity())
     
     def test_resize_raise_less_than_1(self):
         self.assertRaises(ValueError, self.f.resize, 0)
